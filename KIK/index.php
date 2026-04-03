@@ -6,7 +6,7 @@ if (isset($_POST['login'])) {
     $role = login($_POST['email'], $_POST['password']);
     
     if ($role == 'admin') {
-        header("Location: dashboard.php");
+        header("Location: admin/dashboard.php");
         exit();
     } elseif ($role == 'user') {
         header("Location: home.php");
