@@ -111,10 +111,20 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
         });
     </script>
 
-    <div class="bottom-nav">
-        <a href="home.php" class="nav-item active"><span>🏠</span>Beranda</a>
-        <a href="order.html" class="nav-item"><span>📋</span>Order</a>
-        <a href="profile.php" class="nav-item"><span>👤</span>Saya</a>
-    </div>
+<div class="bottom-nav">
+            <a href="home.php" class="nav-item">
+                <img src="home_icon.png" style="width: 24px; height: 24px; display: block; margin: 0 auto 2px;">
+                Beranda
+            </a>
+            <a href="order.html" class="nav-item active">
+                <img src="order_icon.png" style="width: 24px; height: 24px; display: block; margin: 0 auto 2px;">
+                Order
+            </a>
+            <a href="profile.php" class="nav-item">
+                <img src="profile_icon.png" style="width: 24px; height: 24px; display: block; margin: 0 auto 2px;">
+                Saya
+            </a>
+        </div>
+
 </body>
 </html>

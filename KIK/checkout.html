@@ -20,6 +20,11 @@
         .checkout-card-title { font-size: 14px; font-weight: bold; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase; }
         .custom-radio { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; cursor: pointer; }
         .custom-radio input[type="radio"] { accent-color: var(--primary); width: 18px; height: 18px; cursor: pointer; }
+        
+        /* Tombol Durasi Sewa */
+        .stepper-btn { width: 32px; height: 32px; background: white; border: none; font-weight: bold; font-size: 18px; cursor: pointer; color: var(--primary); }
+        .stepper-btn:hover { background: #f0f0f0; }
+        .stepper-btn:disabled { color: #ccc; cursor: not-allowed; background: white; }
     </style>
 </head>
 <body>
@@ -39,6 +44,19 @@
 
                 <div class="checkout-card">
                     <p style="font-weight: bold; margin-bottom: 15px;">⛺ Mountster Rental Store</p>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eee; margin-bottom: 15px;">
+                        <div>
+                            <p style="font-weight: bold; font-size: 14px;">Durasi Sewa</p>
+                            <p style="font-size: 12px; color: var(--text-muted);">Tentukan lama peminjaman alat</p>
+                        </div>
+                        <div style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                            <button id="btnMinus" class="stepper-btn" onclick="decreaseDays()" disabled>-</button>
+                            <span id="rentalDaysDisplay" style="width: 50px; text-align: center; font-size: 14px; font-weight: bold; border-left: 1px solid #ddd; border-right: 1px solid #ddd; display: inline-block; line-height: 32px;">1 Hari</span>
+                            <button class="stepper-btn" onclick="increaseDays()">+</button>
+                        </div>
+                    </div>
+
                     <div id="checkoutItemsContainer"></div>
                     
                     <div style="margin-top: 20px; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
@@ -179,8 +197,8 @@
         
         let cartToCheckout = [];
         let totalItemPrice = 0;
+        let rentalDays = 1; // Variabel Baru: Default Hari Sewa
 
-        // Cek "Beli Langsung" atau "Keranjang"
         let directBuy = JSON.parse(localStorage.getItem('mountsterDirectBuy'));
         if (directBuy) {
             cartToCheckout = directBuy;
@@ -189,31 +207,55 @@
             cartToCheckout = JSON.parse(localStorage.getItem('mountsterCart')) || [];
         }
 
-        // --- Variabel Pembayaran (Kosong secara default) ---
         let finalPaymentMethod = null; 
         let finalPaymentDisplayName = null;
         let isFinalPaymentVA = false;
 
+        // --- FITUR BARU: LOGIKA DURASI SEWA ---
+        function increaseDays() {
+            rentalDays++;
+            updateRentalDaysUI();
+        }
+
+        function decreaseDays() {
+            if (rentalDays > 1) {
+                rentalDays--;
+                updateRentalDaysUI();
+            }
+        }
+
+        function updateRentalDaysUI() {
+            document.getElementById('rentalDaysDisplay').innerText = rentalDays + " Hari";
+            // Kunci tombol minus jika hari = 1
+            document.getElementById('btnMinus').disabled = (rentalDays <= 1);
+            loadCheckout(); // Reload hitungan harga
+        }
+
         // --- 2. RENDER PRODUK & RINGKASAN ---
         function loadCheckout() {
-            if (cartToCheckout.length === 0) {
-                window.location.href = "home.html"; return;
-            }
+            if (cartToCheckout.length === 0) { window.location.href = "home.html"; return; }
 
             const container = document.getElementById('checkoutItemsContainer');
             container.innerHTML = "";
-            let totalItems = 0; totalItemPrice = 0;
+            let totalItems = 0; 
+            totalItemPrice = 0;
 
             cartToCheckout.forEach(item => {
                 let priceNumber = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
-                totalItems += item.qty; totalItemPrice += (priceNumber * item.qty);
+                totalItems += item.qty; 
+                
+                // Kalikan harga item dengan jumlah qty dan lama hari sewa
+                let totalSewaPerItem = (priceNumber * item.qty) * rentalDays;
+                totalItemPrice += totalSewaPerItem;
 
                 container.innerHTML += `
                     <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                         <div style="width: 60px; height: 60px; background: #eee; border-radius: 8px; display:flex; justify-content:center; align-items:center;">⛺</div>
                         <div style="flex: 1;">
-                            <h4 style="font-size: 14px; margin-bottom: 5px;">${item.name}</h4>
-                            <p style="font-weight: bold; font-size: 14px;">${item.price} <span style="font-weight:normal; color:#888; font-size:12px;">x ${item.qty}</span></p>
+                            <h4 style="font-size: 14px; font-weight: bold; margin-bottom: 3px;">${item.name}</h4>
+                            <p style="font-weight: bold; font-size: 14px; color: var(--primary);">Rp ${(totalSewaPerItem).toLocaleString('id-ID')} 
+                                <span style="font-weight:normal; color:#888; font-size:12px;">(x${item.qty}, ${rentalDays} Hari)</span>
+                            </p>
                         </div>
                     </div>`;
             });
@@ -223,7 +265,7 @@
             
             updateSummary();
             renderActiveAddress();
-            renderPaymentUI(); // Render tampilan pembayaran awal (Pilih Metode)
+            renderPaymentUI();
         }
 
         function updateSummary() {
@@ -271,16 +313,10 @@
             }
         }
 
-        // --- 4. LOGIKA ALERT MODAL ---
-        function showAlert(message) {
-            document.getElementById('alertModalMessage').innerText = message;
-            document.getElementById('alertModal').classList.add('active');
-        }
-        function closeAlertModal() {
-            document.getElementById('alertModal').classList.remove('active');
-        }
+        // --- 4. ALERT & PETA (LEAFLET) ---
+        function showAlert(message) { document.getElementById('alertModalMessage').innerText = message; document.getElementById('alertModal').classList.add('active'); }
+        function closeAlertModal() { document.getElementById('alertModal').classList.remove('active'); }
 
-        // --- 5. LOGIKA PETA (LEAFLET) ---
         let map, marker;
         function showAddForm() {
             document.getElementById('addressListView').style.display = 'none'; document.getElementById('addressFormView').style.display = 'block'; document.getElementById('modalTitle').innerText = 'Tambah Alamat Baru';
@@ -306,90 +342,75 @@
             selectAddress(newId); 
         }
 
-        // --- 6. LOGIKA METODE PEMBAYARAN (MODAL & UI) ---
+        // --- 5. METODE PEMBAYARAN ---
         function renderPaymentUI() {
             const container = document.getElementById('selectedPaymentContainer');
-            
             if (!finalPaymentMethod) {
-                // Tampilan jika belum ada yang dipilih
-                container.innerHTML = `
-                    <div style="padding: 12px; border: 1px dashed var(--primary); border-radius: 8px; text-align: center; background: #f4fbf4;">
-                        <span style="font-size: 14px; font-weight: bold; color: var(--primary);">+ Pilih Metode Pembayaran</span>
-                    </div>
-                `;
+                container.innerHTML = `<div style="padding: 12px; border: 1px dashed var(--primary); border-radius: 8px; text-align: center; background: #f4fbf4;"><span style="font-size: 14px; font-weight: bold; color: var(--primary);">+ Pilih Metode Pembayaran</span></div>`;
             } else if (isFinalPaymentVA) {
-                // Tampilan jika milih VA 
-                container.innerHTML = `
-                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">Virtual Account</div>
-                    <label class="custom-radio" style="padding: 0; border: none; pointer-events: none;">
-                        <span style="color: #333; font-size: 14px;">${finalPaymentDisplayName}</span>
-                        <input type="radio" checked>
-                    </label>
-                `;
+                container.innerHTML = `<div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">Virtual Account</div><label class="custom-radio" style="padding: 0; border: none; pointer-events: none;"><span style="color: #333; font-size: 14px;">${finalPaymentDisplayName}</span><input type="radio" checked></label>`;
             } else {
-                // Tampilan jika milih QRIS
-                container.innerHTML = `
-                    <label class="custom-radio" style="padding: 0; border: none; pointer-events: none;">
-                        <span style="font-size: 14px;">${finalPaymentDisplayName}</span>
-                        <input type="radio" checked>
-                    </label>
-                `;
+                container.innerHTML = `<label class="custom-radio" style="padding: 0; border: none; pointer-events: none;"><span style="font-size: 14px;">${finalPaymentDisplayName}</span><input type="radio" checked></label>`;
             }
         }
+        function openPaymentModal() { document.getElementById('paymentModal').classList.add('active'); if (isFinalPaymentVA) { document.getElementById('vaList').style.display = 'block'; document.getElementById('va-arrow').innerText = '^'; } }
+        function closePaymentModal() { document.getElementById('paymentModal').classList.remove('active'); }
+        function toggleVAList() { const list = document.getElementById('vaList'); const arrow = document.getElementById('va-arrow'); if (list.style.display === 'none') { list.style.display = 'block'; arrow.innerText = '^'; } else { list.style.display = 'none'; arrow.innerText = 'v'; } }
+        function selectPayment(displayName, systemName, isVA) { finalPaymentMethod = systemName; finalPaymentDisplayName = displayName; isFinalPaymentVA = isVA; renderPaymentUI(); closePaymentModal(); }
 
-        function openPaymentModal() {
-            document.getElementById('paymentModal').classList.add('active');
-            // Auto expand list VA jika sebelumnya sedang memakai VA
-            if (isFinalPaymentVA) {
-                document.getElementById('vaList').style.display = 'block';
-                document.getElementById('va-arrow').innerText = '^';
-            }
-        }
-
-        function closePaymentModal() {
-            document.getElementById('paymentModal').classList.remove('active');
-        }
-
-        function toggleVAList() {
-            const list = document.getElementById('vaList');
-            const arrow = document.getElementById('va-arrow');
-            if (list.style.display === 'none') {
-                list.style.display = 'block'; arrow.innerText = '^';
-            } else {
-                list.style.display = 'none'; arrow.innerText = 'v';
-            }
-        }
-
-        function selectPayment(displayName, systemName, isVA) {
-            finalPaymentMethod = systemName;
-            finalPaymentDisplayName = displayName;
-            isFinalPaymentVA = isVA;
-            
-            renderPaymentUI();
-            closePaymentModal();
-        }
-
-        // --- 7. PROSES BAYAR ---
+        // --- 6. PROSES BAYAR & ALIH KE HALAMAN PEMBAYARAN ---
         function processPayment() {
-            // Validasi Alamat menggunakan Modal Alert yang baru
-            if (!selectedAddressId) { 
-                showAlert("Harap isi alamat pengiriman terlebih dahulu sebelum membayar!"); 
-                return; 
-            }
-            
-            // Validasi Pembayaran menggunakan Modal Alert yang baru
-            if (!finalPaymentMethod) {
-                showAlert("Harap pilih metode pembayaran terlebih dahulu!");
-                return;
-            }
+            if (!selectedAddressId) { showAlert("Harap isi alamat pengiriman terlebih dahulu sebelum membayar!"); return; }
+            if (!finalPaymentMethod) { showAlert("Harap pilih metode pembayaran terlebih dahulu!"); return; }
 
-            // Jika semua sudah diisi
-            alert(`Transaksi Berhasil!\nMetode Pembayaran: ${finalPaymentDisplayName.replace(/<[^>]*>?/gm, '')}\nBarang akan segera disiapkan.`);
+            // Ambil nomor HP dari alamat yang dipilih untuk nomor VA
+            const activeAddress = addresses.find(a => a.id == selectedAddressId);
+            const userPhone = activeAddress.phone;
+
+            // Hitung grand total
+            const shippingCost = parseInt(document.getElementById('shippingSelect').value);
+            const grandTotal = totalItemPrice + shippingCost;
+
+            // Tentukan Prefix VA (Contoh aja biar mirip asli)
+            let vaPrefix = "8077"; 
+            if (finalPaymentMethod.includes("BCA")) vaPrefix = "3901";
+            if (finalPaymentMethod.includes("Mandiri")) vaPrefix = "89508";
+            if (finalPaymentMethod.includes("BRI")) vaPrefix = "2209";
+
+            let orderHistory = JSON.parse(localStorage.getItem('mountsterOrders')) || [];
+            
+            // Satukan semua barang dalam 1 Transaksi (Order ID)
+            const transactionId = "INV" + Date.now();
+            const deadlineTime = Date.now() + (23 * 60 * 60 * 1000); // 23 Jam dari sekarang
+
+            const newTransaction = {
+                id: transactionId,
+                items: cartToCheckout.map(item => {
+                    let priceNumber = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
+                    return {
+                        name: item.name,
+                        price: "Rp " + (priceNumber * item.qty * rentalDays).toLocaleString('id-ID'),
+                        qty: item.qty + ` (${rentalDays} Hari)`
+                    }
+                }),
+                totalPay: grandTotal,
+                status: "Belum Dibayar",
+                paymentSystem: finalPaymentMethod,
+                paymentName: finalPaymentDisplayName,
+                isVA: isFinalPaymentVA,
+                vaNumber: isFinalPaymentVA ? (vaPrefix + userPhone) : null,
+                deadline: deadlineTime
+            };
+            
+            orderHistory.unshift(newTransaction);
+            localStorage.setItem('mountsterOrders', JSON.stringify(orderHistory));
             
             if(!directBuy) { localStorage.removeItem('mountsterCart'); }
-            window.location.href = "home.html";
+            
+            // Pindah ke halaman pembayaran membawa ID Transaksi
+            window.location.href = `payment.html?id=${transactionId}`; 
         }
-
+        
         // Jalankan saat pertama load
         loadCheckout();
     </script>
