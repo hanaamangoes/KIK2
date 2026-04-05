@@ -233,7 +233,7 @@
 
         // --- 2. RENDER PRODUK & RINGKASAN ---
         function loadCheckout() {
-            if (cartToCheckout.length === 0) { window.location.href = "home.html"; return; }
+            if (cartToCheckout.length === 0) { window.location.href = "home.php"; return; }
 
             const container = document.getElementById('checkoutItemsContainer');
             container.innerHTML = "";
@@ -358,30 +358,27 @@
         function toggleVAList() { const list = document.getElementById('vaList'); const arrow = document.getElementById('va-arrow'); if (list.style.display === 'none') { list.style.display = 'block'; arrow.innerText = '^'; } else { list.style.display = 'none'; arrow.innerText = 'v'; } }
         function selectPayment(displayName, systemName, isVA) { finalPaymentMethod = systemName; finalPaymentDisplayName = displayName; isFinalPaymentVA = isVA; renderPaymentUI(); closePaymentModal(); }
 
-        // --- 6. PROSES BAYAR & ALIH KE HALAMAN PEMBAYARAN ---
         function processPayment() {
             if (!selectedAddressId) { showAlert("Harap isi alamat pengiriman terlebih dahulu sebelum membayar!"); return; }
             if (!finalPaymentMethod) { showAlert("Harap pilih metode pembayaran terlebih dahulu!"); return; }
 
-            // Ambil nomor HP dari alamat yang dipilih untuk nomor VA
             const activeAddress = addresses.find(a => a.id == selectedAddressId);
             const userPhone = activeAddress.phone;
 
-            // Hitung grand total
-            const shippingCost = parseInt(document.getElementById('shippingSelect').value);
+            const shippingSelect = document.getElementById('shippingSelect');
+            const shippingCost = parseInt(shippingSelect.value);
+            const isPickup = (shippingCost === 0); // Deteksi kalau ongkir 0 = Ambil di Toko
+
             const grandTotal = totalItemPrice + shippingCost;
 
-            // Tentukan Prefix VA (Contoh aja biar mirip asli)
             let vaPrefix = "8077"; 
             if (finalPaymentMethod.includes("BCA")) vaPrefix = "3901";
             if (finalPaymentMethod.includes("Mandiri")) vaPrefix = "89508";
             if (finalPaymentMethod.includes("BRI")) vaPrefix = "2209";
 
             let orderHistory = JSON.parse(localStorage.getItem('mountsterOrders')) || [];
-            
-            // Satukan semua barang dalam 1 Transaksi (Order ID)
             const transactionId = "INV" + Date.now();
-            const deadlineTime = Date.now() + (23 * 60 * 60 * 1000); // 23 Jam dari sekarang
+            const deadlineTime = Date.now() + (23 * 60 * 60 * 1000); 
 
             const newTransaction = {
                 id: transactionId,
@@ -399,15 +396,14 @@
                 paymentName: finalPaymentDisplayName,
                 isVA: isFinalPaymentVA,
                 vaNumber: isFinalPaymentVA ? (vaPrefix + userPhone) : null,
-                deadline: deadlineTime
+                deadline: deadlineTime,
+                shippingType: isPickup ? "pickup" : "delivery" // SIMPAN TIPE PENGIRIMAN
             };
             
             orderHistory.unshift(newTransaction);
             localStorage.setItem('mountsterOrders', JSON.stringify(orderHistory));
             
             if(!directBuy) { localStorage.removeItem('mountsterCart'); }
-            
-            // Pindah ke halaman pembayaran membawa ID Transaksi
             window.location.href = `payment.html?id=${transactionId}`; 
         }
         

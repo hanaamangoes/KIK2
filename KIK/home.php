@@ -34,7 +34,7 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
         .weather-result { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 15px; margin-top: 15px; display: none; animation: fadeIn 0.5s ease; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
 
         /* --- CSS Eco-Reward --- */
-        .eco-banner { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 20px; padding: 20px; color: white; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 8px 15px rgba(17, 153, 142, 0.3); margin-bottom: 20px; }
+        .eco-banner { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 20px; padding: 20px; color: white; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 8px 15px rgba(17, 153, 142, 0.3); margin-bottom: 20px; cursor: pointer; }
 
         /* --- CSS Adu Mekanik --- */
         .compare-section { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 0 20px 20px 20px; }
@@ -50,7 +50,7 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
         /* ==========================================
            CSS KHUSUS FITUR SOS & SURVIVAL (INOVASI 4)
            ========================================== */
-.sos-container {
+        .sos-container {
             position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 100%; pointer-events: none; z-index: 1000;
         }
@@ -89,15 +89,13 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
         .survival-card h4 { margin: 0 0 5px 0; font-size: 14px; color: #ffc107; }
         .survival-card p { margin: 0; font-size: 12px; color: #ccc; line-height: 1.5; }
 
-        .btn-flash {
-            background: white; color: black; font-weight: bold; padding: 15px;
-            border-radius: 12px; border: none; width: 100%; font-size: 16px;
-            margin-bottom: 20px; cursor: pointer; text-transform: uppercase;
-        }
-        .screen-flash-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 10000; display: none;
-        }
+        .btn-flash { background: white; color: black; font-weight: bold; padding: 15px; border-radius: 12px; border: none; width: 100%; font-size: 16px; margin-bottom: 20px; cursor: pointer; text-transform: uppercase; }
+        .screen-flash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; display: none; }
+        
+        /* Modal Notifikasi Kustom Tengah */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(4px); }
+        .modal-box-alert { background: white; width: 85%; max-width: 320px; padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: scaleUp 0.3s forwards; }
+        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -149,12 +147,12 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
             </div>
         </div>
 
-        <div class="p-20" style="padding-top: 0;">
+        <div class="p-20" style="padding-top: 0;" onclick="window.location.href='profile.php'">
             <div class="eco-banner">
                 <div style="flex: 1;">
                     <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(255,255,255,0.5);">♻️ ECO-WARRIOR</span>
                     <h3 style="margin: 10px 0 5px 0; font-size: 16px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Bawa Turun Sampahmu!</h3>
-                    <p style="font-size: 11px; color: #f0fff0; margin-bottom: 12px; line-height: 1.4; max-width: 90%;">Tukar foto sampah yang kamu bawa turun dengan voucher diskon 20%.</p>
+                    <p style="font-size: 11px; color: #f0fff0; margin-bottom: 12px; line-height: 1.4; max-width: 90%;">Upload foto sampah di Profil untuk dapatkan voucher 20%.</p>
                 </div>
                 <div style="font-size: 60px; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));">🌍</div>
             </div>
@@ -186,7 +184,46 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
             </div>
         </div>
 
+        <div class="p-20 flex-between" style="padding-top: 0;">
+            <h3 style="font-size: 16px;">Best Seller Rental</h3>
+            <a href="search.html?rating=4.8" style="font-size: 12px; color: var(--text-muted); text-decoration: none;">See All</a>
+        </div>
         <div class="product-grid" id="homeProductGrid"></div>
+    </div>
+
+    <div id="customAlertModal" class="modal-overlay">
+        <div class="modal-box-alert">
+            <div id="alertEmoji" style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+            <h3 id="alertTitle" style="margin-bottom: 10px; font-size: 16px; color: #333;">Perhatian</h3>
+            <p id="alertMessage" style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Pesan di sini.</p>
+            <button class="btn btn-primary" onclick="closeCustomAlert()">Mengerti</button>
+        </div>
+    </div>
+
+    <div class="sos-container">
+        <div class="sos-floating-btn" onclick="openSOSMode()">SOS</div>
+    </div>
+
+    <div class="sos-modal" id="sosModal">
+        <div class="sos-header">
+            <h2 style="margin: 0; font-size: 18px; color: #ff4d4f;">🆘 MODE DARURAT</h2>
+            <span style="font-size: 28px; cursor: pointer; color: #888;" onclick="closeSOSMode()">×</span>
+        </div>
+        <button class="btn-flash" onclick="toggleScreenFlash()">🔦 NYALAKAN SENTER LAYAR</button>
+        <h3 style="font-size: 14px; margin-bottom: 15px; text-align: center; color: #888;">KOMPAS DIGITAL</h3>
+        <div class="compass-box">
+            <span class="compass-label" style="top: 5px;">U</span><span class="compass-label" style="bottom: 5px;">S</span>
+            <span class="compass-label" style="right: 10px;">T</span><span class="compass-label" style="left: 10px;">B</span>
+            <div class="compass-needle" id="compassNeedle"></div>
+        </div>
+        <p style="text-align: center; font-size: 10px; color: #666; margin-bottom: 25px;">(Pastikan rotasi layar & sensor HP aktif)</p>
+        <h3 style="font-size: 14px; margin-bottom: 10px; color: #888;">Buku Saku Survival (Offline)</h3>
+        <div class="survival-card"><h4>🥶 Gejala Hipotermia</h4><p>Ganti baju basah dengan kering. Peluk penderita. Jangan beri minuman keras.</p></div>
+        <div class="survival-card"><h4>🐍 Gigitan Ular</h4><p>Tenangkan korban, bidai area tergigit. Jangan disedot! Segera evakuasi turun.</p></div>
+    </div>
+
+    <div class="screen-flash-overlay" id="flashOverlay" onclick="toggleScreenFlash()">
+        <h1 style="color: black; text-align: center; margin-top: 50vh; transform: translateY(-50%); font-size: 40px;">TAP UNTUK MATIKAN</h1>
     </div>
 
     <div class="bottom-nav">
@@ -195,48 +232,27 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
         <a href="profile.php" class="nav-item"><img src="profile_icon.png" style="width: 24px; height: 24px; display: block; margin: 0 auto 2px;">Saya</a>
     </div>
 
-    <div class="sos-floating-btn" onclick="openSOSMode()">SOS</div>
-
-    <div class="sos-modal" id="sosModal">
-        <div class="sos-header">
-            <h2 style="margin: 0; font-size: 18px; color: #ff4d4f;">🆘 MODE DARURAT</h2>
-            <span style="font-size: 28px; cursor: pointer; color: #888;" onclick="closeSOSMode()">×</span>
-        </div>
-
-        <button class="btn-flash" onclick="toggleScreenFlash()">🔦 NYALAKAN SENTER LAYAR</button>
-
-        <h3 style="font-size: 14px; margin-bottom: 15px; text-align: center; color: #888;">KOMPAS DIGITAL</h3>
-        <div class="compass-box">
-            <span class="compass-label" style="top: 5px;">U</span>
-            <span class="compass-label" style="bottom: 5px;">S</span>
-            <span class="compass-label" style="right: 10px;">T</span>
-            <span class="compass-label" style="left: 10px;">B</span>
-            <div class="compass-needle" id="compassNeedle"></div>
-        </div>
-        <p style="text-align: center; font-size: 10px; color: #666; margin-bottom: 25px;">(Pastikan rotasi layar & sensor HP aktif)</p>
-
-        <h3 style="font-size: 14px; margin-bottom: 10px; color: #888;">Buku Saku Survival (Bisa Diakses Offline)</h3>
-        
-        <div class="survival-card">
-            <h4>🥶 Gejala Hipotermia</h4>
-            <p>Ganti baju basah dengan yang kering. Peluk penderita (*skin-to-skin* di dalam sleeping bag). Jangan beri minuman keras/alkohol, beri air gula hangat perlahan.</p>
-        </div>
-        <div class="survival-card">
-            <h4>🐍 Gigitan Ular</h4>
-            <p>Tenangkan korban, detak jantung cepat menyebarkan racun lebih cepat. Bidai (ikat dengan kayu) area yang tergigit agar tidak bergerak. Jangan disedot! Segera evakuasi turun.</p>
-        </div>
-        <div class="survival-card" style="border-color: #ff4d4f;">
-            <h4>🌲 Tersesat (S.T.O.P)</h4>
-            <p><b>S</b>it (Duduk tenang), <b>T</b>hink (Pikirkan rute terakhir), <b>O</b>bserve (Amati sekitar), <b>P</b>lan (Buat rencana, cari air, tunggu bantuan jika malam tiba).</p>
-        </div>
-    </div>
-
-    <div class="screen-flash-overlay" id="flashOverlay" onclick="toggleScreenFlash()">
-        <h1 style="color: black; text-align: center; margin-top: 50vh; transform: translateY(-50%); font-size: 40px;">TAP UNTUK MATIKAN</h1>
-    </div>
-
     <script>
-        // Logika Cuaca
+        // --- CUSTOM ALERT ---
+        function showCustomAlert(message, title = "Perhatian", emoji = "⚠️") {
+            document.getElementById('alertEmoji').innerText = emoji;
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('customAlertModal').style.display = 'flex';
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
+        // --- SEARCH BAR (KEBAL ERROR) ---
+        document.getElementById('searchInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && this.value.trim() !== "") {
+                try { if (typeof handleLatestSearch === "function") { handleLatestSearch(this.value); } } catch(err) {}
+                window.location.href = 'search.html?q=' + encodeURIComponent(this.value.trim());
+            }
+        });
+
+        // --- LOGIKA CUACA ---
         const weatherDB = {
             'semeru': { icon: '⛈️', status: 'Potensi Badai', desc: 'Rawan badai pasir.', color: '#ff4d4f' },
             'prau': { icon: '❄️', status: 'Suhu Sangat Dingin', desc: 'Suhu minus di pagi hari.', color: '#00bcd4' },
@@ -244,7 +260,7 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
         };
         function checkWeather() {
             const mnt = document.getElementById('mountainSelect').value;
-            if(!mnt) { alert("Pilih gunung dulu!"); return; }
+            if(!mnt) { showCustomAlert("Pilih gunungnya dulu dong di kolom pilihan!", "Oops!", "⛰️"); return; }
             document.getElementById('weatherResultBox').style.display = 'block';
             document.getElementById('wIcon').innerText = weatherDB[mnt].icon;
             document.getElementById('wStatus').innerText = weatherDB[mnt].status;
@@ -252,14 +268,14 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
             document.getElementById('wDesc').innerText = weatherDB[mnt].desc;
         }
 
-        // Logika Adu Mekanik
+        // --- LOGIKA ADU MEKANIK ---
         const gearDB = {
             'naturehike': { name: 'Naturehike Cloud Up 2', weight: 1.5, weightTxt: '1.5 kg', price: 'Rp 60.000' },
             'eiger': { name: 'Eiger Shira 1P', weight: 2.1, weightTxt: '2.1 kg', price: 'Rp 45.000' }
         };
         function compareGear() {
             const g1 = document.getElementById('gear1').value; const g2 = document.getElementById('gear2').value;
-            if(g1 === g2) { alert("Jangan pilih barang sama!"); return; }
+            if(g1 === g2) { showCustomAlert("Jangan pilih barang yang sama buat diadu!", "Nggak Bisa Diadu", "⚖️"); return; }
             document.getElementById('titleA').innerText = gearDB[g1].name; document.getElementById('titleB').innerText = gearDB[g2].name;
             document.getElementById('wA').innerText = gearDB[g1].weightTxt; document.getElementById('wB').innerText = gearDB[g2].weightTxt;
             document.getElementById('wA').className = (gearDB[g1].weight < gearDB[g2].weight) ? 'winner' : ''; 
@@ -268,7 +284,7 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
             document.getElementById('compareResult').style.display = 'block';
         }
 
-        // Render Produk Best Seller
+        // --- RENDER BEST SELLER ---
         products.forEach((p, i) => { p.rating = p.rating || 4.8; p.reviews = p.reviews || 102; });
         const container = document.getElementById('homeProductGrid');
         products.slice(0,4).forEach((p, index) => {
@@ -276,52 +292,16 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/notionis
             container.innerHTML += `<div class="card-new ${hideClass}"><a href="detail.html?id=${p.id}" style="text-decoration:none; color:inherit; display:block;"><img src="" alt="IMG"><h4 class="card-new-title">${p.name}</h4><p class="card-new-price">${p.price}</p></a></div>`;
         });
 
-        // ==========================================
-        // LOGIKA SOS & SURVIVAL MODE
-        // ==========================================
-        function openSOSMode() {
-            document.getElementById('sosModal').style.display = 'flex';
-            // Aktifkan sensor kompas saat dibuka (jika di HP)
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', handleOrientation);
-            }
-        }
-
-        function closeSOSMode() {
-            document.getElementById('sosModal').style.display = 'none';
-            // Matikan sensor untuk hemat baterai
-            window.removeEventListener('deviceorientation', handleOrientation);
-            clearInterval(flashInterval); // Matikan flash jika sedang nyala
-            document.getElementById('flashOverlay').style.display = 'none';
-        }
-
-        function handleOrientation(event) {
-            let compassNeedle = document.getElementById('compassNeedle');
-            let dir = event.webkitCompassHeading || Math.abs(event.alpha - 360);
-            if(dir) {
-                compassNeedle.style.transform = `rotate(${-dir}deg)`;
-            }
-        }
-
-        let flashInterval;
-        let isFlashing = false;
+        // --- LOGIKA SOS ---
+        function openSOSMode() { document.getElementById('sosModal').style.display = 'flex'; if (window.DeviceOrientationEvent) { window.addEventListener('deviceorientation', handleOrientation); } }
+        function closeSOSMode() { document.getElementById('sosModal').style.display = 'none'; window.removeEventListener('deviceorientation', handleOrientation); clearInterval(flashInterval); document.getElementById('flashOverlay').style.display = 'none'; }
+        function handleOrientation(event) { let compassNeedle = document.getElementById('compassNeedle'); let dir = event.webkitCompassHeading || Math.abs(event.alpha - 360); if(dir) { compassNeedle.style.transform = `rotate(${-dir}deg)`; } }
+        
+        let flashInterval; let isFlashing = false;
         function toggleScreenFlash() {
             const overlay = document.getElementById('flashOverlay');
-            if (isFlashing) {
-                clearInterval(flashInterval);
-                overlay.style.display = 'none';
-                isFlashing = false;
-            } else {
-                isFlashing = true;
-                overlay.style.display = 'block';
-                // Bikin kedap kedip super cepat untuk narik perhatian
-                let isWhite = true;
-                flashInterval = setInterval(() => {
-                    overlay.style.background = isWhite ? 'black' : 'white';
-                    overlay.style.color = isWhite ? 'white' : 'black';
-                    isWhite = !isWhite;
-                }, 200); // Kedip setiap 0.2 detik
-            }
+            if (isFlashing) { clearInterval(flashInterval); overlay.style.display = 'none'; isFlashing = false; } 
+            else { isFlashing = true; overlay.style.display = 'block'; let isWhite = true; flashInterval = setInterval(() => { overlay.style.background = isWhite ? 'black' : 'white'; overlay.style.color = isWhite ? 'white' : 'black'; isWhite = !isWhite; }, 200); }
         }
     </script>
 </body>

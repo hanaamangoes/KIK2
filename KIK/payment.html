@@ -100,12 +100,18 @@
             }
         }, 1000);
 
-        // Jika user klik "Sudah Dibayar"
         function confirmPayment() {
-            order.status = "Dikemas"; // Ubah status!
+            // Cek tipe pengirimannya
+            if (order.shippingType === 'pickup') {
+                order.status = "Ambil di Toko"; 
+            } else {
+                order.status = "Dikemas"; 
+            }
+            
             localStorage.setItem('mountsterOrders', JSON.stringify(orders));
             window.location.href = "order.html";
         }
+
     </script>
 </body>
 </html>
