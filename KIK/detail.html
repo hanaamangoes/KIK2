@@ -85,7 +85,6 @@
     </div>
 
     <script>
-        // Sihir rating otomatis
         products.forEach((p, i) => {
             p.rating = p.rating || (i % 3 === 0 ? 4.8 : (i % 2 === 0 ? 5.0 : 4.5));
             p.reviews = p.reviews || Math.floor(Math.random() * 100) + 10;
@@ -95,13 +94,11 @@
         const productId = parseInt(urlParams.get('id'));
         const product = products.find(p => p.id === productId) || products[0];
 
-        // Masukkan data ID produk secara paksa ke tombol Hati agar tidak Error
         document.getElementById('detHeartIcon').setAttribute('onclick', `toggleWishlist(${product.id})`);
-
         document.getElementById('detName').innerText = product.name;
         document.getElementById('detPrice').innerText = product.price;
         document.getElementById('detDesc').innerText = `${product.name} adalah salah satu perlengkapan terbaik di kategori ${product.category}. Dirancang dengan material berkualitas tinggi untuk menunjang keamanan dan kenyamanan aktivitas outdoor Anda di segala cuaca. Pastikan perlengkapan ini masuk dalam list penyewaan Anda!`;
-
+        
         function switchTab(tabId) {
             document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -134,13 +131,11 @@
         });
 
         document.getElementById('btnBuyNow').addEventListener('click', function() {
-            // Simpan produk ke memori sementara khusus "Beli Langsung"
             let directItem = [{ id: product.id, name: product.name, price: product.price, qty: 1 }];
             localStorage.setItem('mountsterDirectBuy', JSON.stringify(directItem));
-            window.location.href = 'checkout.html'; // Langsung lompat ke checkout
+            window.location.href = 'checkout.html'; 
         });
         
-        // Panggil wishlist untuk mengubah warna hati di gambar jika sudah disukai
         updateWishlistIcons();
     </script>
 </body>

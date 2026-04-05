@@ -11,7 +11,7 @@
 <body>
     <div class="app-container">
         <div class="p-20 flex-between">
-            <a href="detail.html" style="text-decoration: none; color: black; font-size: 20px;">←</a>
+            <a href="javascript:history.back()" style="text-decoration: none; color: black; font-size: 20px;">←</a>
             <h2 id="pageTitle" style="font-size: 18px;">Search</h2>
             <a href="cart.html" style="text-decoration: none; font-size: 20px;">🛒</a>
         </div>
@@ -42,7 +42,6 @@
 
         renderLatestSearches();
 
-        // Sihir rating otomatis untuk hasil pencarian
         products.forEach((p, i) => {
             p.rating = p.rating || (i % 3 === 0 ? 4.8 : (i % 2 === 0 ? 5.0 : 4.5));
             p.reviews = p.reviews || Math.floor(Math.random() * 100) + 10;
@@ -51,7 +50,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const searchQuery = urlParams.get('q');
         const catQuery = urlParams.get('cat');
-        const ratingQuery = urlParams.get('rating'); // Filter untuk best seller
+        const ratingQuery = urlParams.get('rating');
 
         let filteredProducts = products;
         let resultTitle = "Semua Produk";
@@ -65,7 +64,6 @@
             resultTitle = `Kategori: ${catQuery}`;
             document.getElementById('pageTitle').innerText = catQuery;
         } else if (ratingQuery) {
-            // Logika untuk menampilkan Rating 4.8 Saja
             filteredProducts = products.filter(p => p.rating == ratingQuery);
             resultTitle = `Produk Best Seller (Rating ${ratingQuery})`;
             document.getElementById('pageTitle').innerText = "Best Seller";
@@ -89,7 +87,7 @@
                             <span>⭐ ${p.rating}</span>
                             <span>${p.reviews} Reviews</span>
                         </div>
-                        </div>
+                    </div>
                 `;
             });
         }

@@ -54,14 +54,37 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
         #cameraModal .modal-box { max-width: 400px; width: 90%; padding: 25px; }
         #videoFeed { width: 100%; border-radius: 18px; background: #000; transform: scaleX(-1); margin-bottom: 10px; }
         
-        /* --- Tombol Group (Konsisten dengan design lain) --- */
+        /* --- Tombol Group --- */
         .modal-btn-group { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 15px; }
         .modal-btn { border: none; padding: 14px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: 0.2s; }
         .btn-potret { background: #1b4332; color: white; }
         .btn-batal { background: #f0f0f0; color: #666; }
         .modal-btn:active { transform: scale(0.96); }
-
         .status-verified { color: #1b4332; font-weight: bold; font-size: 12px; display: none; }
+
+        /* =========================================
+           STYLE VOUCHER KEKINIAN (TIKET BOLONG)
+           ========================================= */
+        .voucher-card {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 15px; padding: 20px; color: white; position: relative;
+            margin-bottom: 15px; box-shadow: 0 8px 20px rgba(17, 153, 142, 0.3);
+            display: flex; justify-content: space-between; align-items: center; overflow: hidden;
+        }
+        .voucher-card::before, .voucher-card::after {
+            content: ''; position: absolute; width: 30px; height: 30px;
+            background-color: var(--bg-color); border-radius: 50%;
+            top: 50%; transform: translateY(-50%); z-index: 1;
+        }
+        .voucher-card::before { left: -15px; box-shadow: inset -3px 0 5px rgba(0,0,0,0.1); }
+        .voucher-card::after { right: -15px; box-shadow: inset 3px 0 5px rgba(0,0,0,0.1); }
+        
+        .voucher-code {
+            display: inline-block; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.6);
+            padding: 8px 15px; border-radius: 8px; font-weight: bold; font-family: monospace; 
+            font-size: 14px; letter-spacing: 2px; cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .voucher-code:hover { background: rgba(0,0,0,0.25); transform: scale(1.05); }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -100,7 +123,17 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
                 <span id="verifBadge" style="font-size:10px; background:orange; color:white; padding:2px 10px; border-radius:10px; margin-left: auto; margin-right: 10px;">Belum</span> 
                 <span style="color:#ccc;">›</span>
             </div>
-            <div class="menu-item" onclick="openSubPage('notificationsPage', 'Notifications')"><span>Notifications</span> <span style="color:#ccc;">›</span></div>
+            
+            <div class="menu-item" onclick="openSubPage('notificationsPage', 'Notifications')">
+                <span>Notifications</span> <span style="color:#ccc;">›</span>
+            </div>
+            
+            <div class="menu-item" onclick="openSubPage('voucherPage', 'Voucher Saya'); renderVouchers();">
+                <span>Voucher</span> 
+                <span id="voucherBadge" style="font-size:10px; background:#ff4d4f; color:white; padding:2px 8px; border-radius:10px; margin-left: auto; margin-right: 10px; display: none;">Baru</span>
+                <span style="color:#ccc;">›</span>
+            </div>
+            
             <div class="menu-item" onclick="openSubPage('wishlistPage', 'Wishlist')"><span>Wishlist</span> <span style="color:#ccc;">›</span></div>
 
             <p class="menu-section-title">Legal</p>
@@ -141,7 +174,14 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
                 <button id="btnSubmitVerif" class="btn btn-primary" onclick="submitVerifikasi()">Ajukan Verifikasi</button>
             </div>
             
-            <div id="notificationsPage" class="sub-page"><p style="text-align:center; color:#888; padding:20px;">Tidak ada notifikasi.</p></div>
+            <div id="notificationsPage" class="sub-page">
+                <p style="text-align:center; color:#888; padding:20px;">Belum ada notifikasi baru.</p>
+            </div>
+
+            <div id="voucherPage" class="sub-page">
+                <div id="voucherContainer"></div>
+            </div>
+            
             <div id="wishlistPage" class="sub-page"><div id="wishlistContainer"></div></div>
             <div id="termsPage" class="sub-page"><p style="font-size:12px; color:#666; line-height: 1.6;">Syarat & Ketentuan Mountster...</p></div>
             <div id="privacyPage" class="sub-page"><p style="font-size:12px; color:#666; line-height: 1.6;">Kebijakan Privasi...</p></div>
@@ -153,7 +193,6 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
             <h3 style="margin-bottom: 15px; font-size: 17px; color: #1b4332;">Ambil Gambar</h3>
             <video id="videoFeed" autoplay playsinline></video>
             <canvas id="photoCanvas" style="display:none;"></canvas>
-            
             <div class="modal-btn-group">
                 <button class="modal-btn btn-potret" onclick="takeSnapshot()">Potret</button>
                 <button class="modal-btn btn-batal" onclick="stopCamera()">Batal</button>
@@ -176,6 +215,43 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
     <script>
         let currentPreviewTarget = '';
         let stream = null;
+
+        // --- Logika Render Voucher ---
+        function renderVouchers() {
+            const container = document.getElementById('voucherContainer');
+            // Ambil data voucher dari LocalStorage
+            let vouchers = JSON.parse(localStorage.getItem('mountsterVouchers')) || [];
+            let activeVouchers = vouchers.filter(v => !v.used); // Tampilkan yg belum dipakai
+
+            if (activeVouchers.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px;">
+                        <span style="font-size: 50px; color: #ccc;">🎟️</span>
+                        <p style="color:#888; margin-top: 10px; font-size: 13px;">Belum ada voucher aktif.<br>Bantu bawa turun sampah dari gunung untuk dapat voucher!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '<h3 style="margin-bottom: 15px; font-size: 14px;">Voucher Tersedia</h3>';
+            
+            // Loop dan gambar vouchernya
+            activeVouchers.forEach(v => {
+                container.innerHTML += `
+                    <div class="voucher-card">
+                        <div style="z-index: 2;">
+                            <span style="font-size: 10px; background: rgba(255,255,255,0.3); padding: 3px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase;">♻️ Promo Eco-Warrior</span>
+                            <h4 style="margin: 8px 0 4px 0; font-size: 16px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">${v.title}</h4>
+                            <p style="font-size: 11px; color: #f0fff0; line-height: 1.4;">${v.desc}</p>
+                            
+                            <div class="voucher-code" onclick="alert('Kode voucher ${v.code} berhasil disalin!'); navigator.clipboard.writeText('${v.code}')">
+                                ✂️ ${v.code}
+                            </div>
+                        </div>
+                        <div style="font-size: 45px; opacity: 0.9; z-index: 2; transform: rotate(-15deg);">🎟️</div>
+                    </div>
+                `;
+            });
+        }
 
         // --- Logika Kamera ---
         async function startCamera(targetId) {
@@ -240,7 +316,6 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
 
         function showBugModal() { document.getElementById('bugModal').style.display = 'flex'; }
         function closeBugModal() { document.getElementById('bugModal').style.display = 'none'; }
-
         function reportViaGmail() {
             const adminEmail = "admin@mountster.com";
             const subject = encodeURIComponent("Bug Report - Mountster [<?php echo $userName; ?>]");
@@ -250,14 +325,20 @@ $userAvatar = $_SESSION['user_avatar'] ?? 'https://api.dicebear.com/8.x/lorelei/
         }
 
         window.onload = function() {
+            // Cek status verifikasi KTP
             if(localStorage.getItem('is_verified') === 'true') {
                 document.getElementById('verifiedLabel').style.display = 'block';
                 const badge = document.getElementById('verifBadge');
-                if(badge) {
-                    badge.innerText = 'Sudah';
-                    badge.style.background = '#1b4332';
-                }
+                if(badge) { badge.innerText = 'Sudah'; badge.style.background = '#1b4332'; }
             }
+            
+            // Cek apa ada voucher baru untuk memunculkan badge merah
+            let vouchers = JSON.parse(localStorage.getItem('mountsterVouchers')) || [];
+            let hasActive = vouchers.find(v => !v.used);
+            if(hasActive && document.getElementById('voucherBadge')) {
+                document.getElementById('voucherBadge').style.display = 'inline-block';
+            }
+
             const params = new URLSearchParams(window.location.search);
             if(params.get('require') === 'verif') openSubPage('verifPage', 'Verifikasi 2 Langkah');
         };
